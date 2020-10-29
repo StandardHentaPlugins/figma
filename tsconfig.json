@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+      "outDir": "lib/",
+      "types": ["node"],
+      "module": "commonJS",
+      "target": "ES2018",
+      "skipLibCheck": true
+  },
+  "filesGlob": [
+		"src/*.ts"
+	]
+}
