@@ -41,8 +41,25 @@ export default class FigmaPlugin {
     const template: any = await this.client.file(fileId)
       .then(v => v.data.document.children[0]['children'].find(v => v.name === slug));
 
-    const { images } = await this.client.fileImageFills(fileId).then(v => v.data.meta);
-    await Promise.all(Object.entries(images).map(async (v: any) => { this.images[v[0]] = await loadImage(v[1]) }));
+    const { images: allImages } = await this.client.fileImageFills(fileId).then(v => v.data.meta);
+
+    // Find all refs
+    const allRefs = [];
+    const findRefs = node => {
+      allRefs.push(...node.fills.filter(v => v.imageRef).map(v => v.imageRef));
+      if (node.children) node.children.forEach(findRefs);
+    }
+
+    findRefs(template);
+    const images: any[] = Object.entries(allImages).filter(v => allRefs.includes(v[0]));
+
+    this.henta.log(`Загрузка изображений (${images.length} шт.)`);
+    for (let i = 0; i < images.length; i++) {
+      const v = images[i];
+      this.images[v[0]] = await loadImage(v[1]);
+      this.henta.log(`[${v[0]}] Загружено ${i + 1}/${images.length} (${Math.floor((i+1) / images.length * 100)}%)`);
+    }
+    await Promise.all(images.map(async (v: any) => { this.images[v[0]] = await loadImage(v[1]) }));
 
     this.henta.log(`Figma компонент загружен: ${slug}.`);
     this.optimize(template);
